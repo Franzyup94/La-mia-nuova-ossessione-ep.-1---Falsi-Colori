@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>λ → HEX · Astro Colour Tool</title>
+<style>
+  :root{
+    --oc:#F49950; --oc-d:#E07E2E; --ink:#141414; --bg:#17140F;
+    --panel:#211C15; --panel2:#2A241B; --txt:#EFE7DA; --txt2:#B9AE9C;
+    --line:#3A3226; --jw:#7FB4FF; --jw-d:#4E86D6;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:radial-gradient(1200px 600px at 70% -10%,#241d13 0%,var(--bg) 55%) fixed;
+    color:var(--txt); min-height:100vh; padding:32px 18px;
+    display:flex; align-items:flex-start; justify-content:center;
+  }
+  .wrap{width:100%; max-width:660px}
+  .kick{color:var(--oc); font-size:12px; font-weight:700; letter-spacing:2px; text-transform:uppercase}
+  h1{font-size:30px; line-height:1.1; margin:6px 0 4px; font-weight:800}
+  h1 span{color:var(--oc)}
+  .sub{color:var(--txt2); font-size:14px; margin-bottom:20px; line-height:1.5}
+
+  /* ---- toggle ---- */
+  .toggle{display:flex; background:#0F0C08; border:1px solid var(--line); border-radius:12px; padding:4px; margin-bottom:20px; gap:4px}
+  .toggle button{
+    flex:1; border:none; background:transparent; color:var(--txt2); font-weight:700;
+    font-size:14px; padding:11px; border-radius:9px; cursor:pointer; transition:.15s;
+  }
+  .toggle button .lbl2{display:block; font-size:10.5px; font-weight:500; opacity:.8; margin-top:2px}
+  .toggle button.active[data-mode="hst"]{background:var(--oc); color:#1a1206}
+  .toggle button.active[data-mode="jwst"]{background:var(--jw); color:#0a1424}
+
+  .card{
+    background:linear-gradient(180deg,var(--panel2),var(--panel));
+    border:1px solid var(--line); border-radius:16px; padding:22px;
+    box-shadow:0 10px 40px rgba(0,0,0,.35);
+  }
+  label{display:block; font-size:12px; text-transform:uppercase; letter-spacing:1px; color:var(--txt2); margin-bottom:8px; font-weight:700}
+
+  input[type=number],input[type=text]{
+    width:100%; font-size:26px; font-weight:700; color:var(--txt);
+    background:#0F0C08; border:1.5px solid var(--line); border-radius:12px;
+    padding:14px 52px 14px 16px; outline:none; transition:border .15s;
+  }
+  input:focus{border-color:var(--oc)}
+  .field{position:relative}
+  .unit{position:absolute; right:16px; top:50%; transform:translateY(-50%); color:var(--txt2); font-weight:700; font-size:16px; pointer-events:none}
+  input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+  input[type=range]{width:100%; margin-top:16px; accent-color:var(--oc); height:6px}
+
+  .spectrum{
+    height:22px; border-radius:8px; margin-top:14px; position:relative;
+    background:linear-gradient(90deg,#6A00B0 0%,#4700E7 8%,#0030FF 15%,#00A2FF 26%,#00FF9A 38%,
+      #00FF00 46%,#B6FF00 54%,#FFD400 62%,#FF7A00 72%,#FF0000 84%,#7A0000 100%);
+    border:1px solid var(--line);
+  }
+  .spectrum .mark{position:absolute; top:-4px; width:3px; height:30px; background:#fff; border-radius:2px; box-shadow:0 0 6px rgba(0,0,0,.6); transform:translateX(-50%)}
+
+  .result{display:flex; gap:18px; align-items:center; margin-top:24px; padding-top:22px; border-top:1px solid var(--line)}
+  .swatch{width:96px; height:96px; border-radius:14px; border:2px solid var(--line); flex-shrink:0; transition:background .12s; box-shadow:inset 0 0 0 1px rgba(255,255,255,.06)}
+  .rinfo{flex:1}
+  .hex{font-size:32px; font-weight:800; letter-spacing:1px; font-family:"SF Mono",Menlo,Consolas,monospace; display:flex; align-items:center; gap:12px; cursor:pointer}
+  .hex #hex{user-select:all}
+  .rgb{color:var(--txt2); font-size:14px; margin-top:4px; font-family:"SF Mono",Menlo,Consolas,monospace}
+  .copy{background:var(--oc); color:#1a1206; border:none; font-weight:700; font-size:12px; padding:7px 14px; border-radius:8px; cursor:pointer; transition:transform .1s,background .15s; white-space:nowrap}
+  .copy:hover{background:var(--oc-d)}
+  .copy:active{transform:scale(.94)}
+  .copy.done{background:#4CAF6A; color:#08210f}
+
+  .band{margin-top:16px; font-size:13px; line-height:1.5; padding:12px 14px; border-radius:10px; border-left:3px solid var(--oc); background:rgba(244,153,80,.08)}
+  .band b{color:var(--oc)}
+
+  .presets{margin-top:22px}
+  .presets .ttl{font-size:12px; text-transform:uppercase; letter-spacing:1px; color:var(--txt2); margin-bottom:10px; font-weight:700}
+  .chips{display:flex; flex-wrap:wrap; gap:8px}
+  .chip{background:var(--panel2); border:1px solid var(--line); color:var(--txt); padding:8px 12px; border-radius:20px; font-size:12.5px; cursor:pointer; transition:.15s; white-space:nowrap}
+  .chip:hover{border-color:var(--oc); background:rgba(244,153,80,.12)}
+  .chip small{color:var(--txt2)}
+
+  /* ---- JWST mode ---- */
+  .addrow{display:flex; gap:10px; margin-bottom:14px}
+  .addrow input{font-size:16px; padding:12px 14px}
+  .addbtn{background:var(--jw); color:#0a1424; border:none; font-weight:700; border-radius:12px; padding:0 20px; cursor:pointer; font-size:15px; white-space:nowrap; transition:.15s}
+  .addbtn:hover{background:var(--jw-d)}
+  .jwlist{display:flex; flex-direction:column; gap:8px; margin-top:6px}
+  .jrow{display:flex; align-items:center; gap:12px; background:#0F0C08; border:1px solid var(--line); border-radius:10px; padding:9px 12px}
+  .jrow .sw{width:34px; height:34px; border-radius:7px; border:1px solid var(--line); flex-shrink:0}
+  .jrow .nm{font-weight:700; min-width:70px; font-size:14px}
+  .jrow .wlv{color:var(--txt2); font-size:12.5px; min-width:78px}
+  .jrow .hx{font-family:"SF Mono",Menlo,Consolas,monospace; font-weight:700; flex:1; cursor:pointer; font-size:14px}
+  .jrow .hx:hover{color:var(--jw)}
+  .jrow .del{background:transparent; border:none; color:var(--txt2); cursor:pointer; font-size:18px; line-height:1; padding:2px 6px; border-radius:6px}
+  .jrow .del:hover{color:#ff6b6b; background:rgba(255,107,107,.1)}
+  .jwbar{height:16px; border-radius:6px; margin:14px 0 4px; border:1px solid var(--line); display:flex; overflow:hidden}
+  .jwbar div{flex:1}
+  .jwempty{color:var(--txt2); font-size:13px; text-align:center; padding:18px; font-style:italic}
+  .copyall{width:100%; margin-top:14px; background:var(--jw); color:#0a1424; border:none; font-weight:700; padding:12px; border-radius:10px; cursor:pointer; font-size:14px; transition:.15s}
+  .copyall:hover{background:var(--jw-d)}
+  .copyall.done{background:#4CAF6A; color:#08210f}
+
+  .foot{margin-top:22px; color:var(--txt2); font-size:11.5px; line-height:1.5; text-align:center}
+  .foot code{color:var(--oc)}
+  .hidden{display:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="kick">FITS &amp; Tricks · Astro Colour Tool</div>
+  <h1>λ <span>→</span> HEX</h1>
+  <p class="sub" id="sub">Scegli il telescopio: il metodo di colorazione cambia di conseguenza.</p>
+
+  <div class="toggle">
+    <button data-mode="hst" class="active" id="btnHST">HST · Hubble<span class="lbl2">colore reale della λ (visibile)</span></button>
+    <button data-mode="jwst" id="btnJWST">JWST · Webb<span class="lbl2">chromatic ordering (infrarosso)</span></button>
+  </div>
+
+  <!-- ================= HST MODE ================= -->
+  <div id="hstCard">
+    <div class="card">
+      <label for="wl">Lunghezza d'onda</label>
+      <div class="field">
+        <input type="number" id="wl" value="656.3" step="0.1" min="200" max="2000">
+        <span class="unit">nm</span>
+      </div>
+      <input type="range" id="slider" min="380" max="750" step="0.1" value="656.3">
+      <div class="spectrum"><div class="mark" id="mark"></div></div>
+      <div style="display:flex;justify-content:space-between;color:var(--txt2);font-size:10px;margin-top:6px">
+        <span>380 nm · violetto</span><span>560 · verde</span><span>750 nm · rosso</span>
+      </div>
+      <div class="result">
+        <div class="swatch" id="swatch"></div>
+        <div class="rinfo">
+          <div class="hex" id="hexClick" title="Clicca per copiare"><span id="hex">#FF0000</span><button class="copy" id="copy">COPIA</button></div>
+          <div class="rgb" id="rgb">rgb(255, 0, 0)</div>
+        </div>
+      </div>
+      <div class="band" id="band"></div>
+    </div>
+    <div class="presets">
+      <div class="ttl">Righe di emissione (narrowband HST)</div>
+      <div class="chips" id="chipsHST"></div>
+    </div>
+  </div>
+
+  <!-- ================= JWST MODE ================= -->
+  <div id="jwstCard" class="hidden">
+    <div class="card">
+      <label>Aggiungi i filtri della tua immagine</label>
+      <div class="addrow">
+        <div class="field" style="flex:1"><input type="text" id="jwName" placeholder="Nome (F444W)" style="padding-right:14px"></div>
+        <div class="field" style="width:150px"><input type="number" id="jwWl" placeholder="nm" step="1"><span class="unit">nm</span></div>
+        <button class="addbtn" id="jwAdd">+ Aggiungi</button>
+      </div>
+      <div class="jwbar hidden" id="jwbar"></div>
+      <div class="jwlist" id="jwlist">
+        <div class="jwempty" id="jwempty">Aggiungi almeno 2 filtri per generare la palette.</div>
+      </div>
+      <button class="copyall hidden" id="jwCopyAll">Copia tutti gli HEX ordinati</button>
+      <div class="band" id="jwband" style="border-left-color:var(--jw);background:rgba(127,180,255,.08)">
+        <b style="color:var(--jw)">Chromatic ordering</b> — i filtri vengono ordinati per lunghezza d'onda e i colori distribuiti sull'intero arco <b style="color:var(--jw)">blu → rosso</b>. Il più corto diventa blu, il più lungo rosso: così anche filtri IR vicinissimi restano distinguibili.
+      </div>
+    </div>
+    <div class="presets">
+      <div class="ttl">Set pronti — clicca per caricare</div>
+      <div class="chips" id="chipsJWST"></div>
+    </div>
+  </div>
+
+  <p class="foot" id="foot"></p>
+</div>
+
+<script>
+/* ============ COPIA robusta (funziona anche da file://) ============ */
+function copyText(txt){
+  if(navigator.clipboard && window.isSecureContext){ return navigator.clipboard.writeText(txt); }
+  return new Promise(function(res,rej){
+    try{ var ta=document.createElement('textarea'); ta.value=txt;
+      ta.style.position='fixed'; ta.style.top='-9999px'; ta.style.opacity='0';
+      document.body.appendChild(ta); ta.focus(); ta.select();
+      try{ta.setSelectionRange(0,txt.length);}catch(e){}
+      var ok=document.execCommand('copy'); document.body.removeChild(ta);
+      ok?res():rej(new Error('x'));
+    }catch(e){rej(e);}
+  });
+}
+function flash(btn,txt){var o=btn.textContent;btn.textContent=txt;btn.classList.add('done');
+  setTimeout(function(){btn.textContent=o;btn.classList.remove('done');},1400);}
+
+/* ============ HST · colore reale della λ (CIE 1931 → sRGB) ============ */
+function g(x,mu,s1,s2){var t=(x-mu)*(x<mu?1/s1:1/s2);return Math.exp(-0.5*t*t);}
+function cie(l){
+  var X=1.056*g(l,599.8,37.9,31.0)+0.362*g(l,442.0,16.0,26.7)-0.065*g(l,501.1,20.4,26.2);
+  var Y=0.821*g(l,568.8,46.9,40.5)+0.286*g(l,530.9,16.3,31.1);
+  var Z=1.217*g(l,437.0,11.8,36.0)+0.681*g(l,459.0,26.0,13.8);
+  return [X,Y,Z];
+}
+function gm(c){return c<=0.0031308?12.92*c:1.055*Math.pow(c,1/2.4)-0.055;}
+function wl2rgb(l){
+  var r,gg,b;
+  if(l>=400&&l<=645){var a=cie(l),X=a[0],Y=a[1],Z=a[2];
+    r=3.2406*X-1.5372*Y-0.4986*Z; gg=-0.9689*X+1.8758*Y+0.0415*Z; b=0.0557*X-0.2040*Y+1.0570*Z;
+    r=Math.max(0,r);gg=Math.max(0,gg);b=Math.max(0,b);
+    var mx=Math.max(r,gg,b)||1; r/=mx;gg/=mx;b/=mx;
+  } else if(l>645){r=1;gg=0;b=0;} else {r=0.38;gg=0;b=1;}
+  var f=1; if(l<420)f=0.30+0.70*(l-350)/70; else if(l>680)f=0.30+0.70*(780-l)/100;
+  f=Math.max(0.12,Math.min(1,f));
+  return [gm(r*f),gm(gg*f),gm(b*f)];
+}
+function toHex(l){var a=wl2rgb(l);
+  var R=Math.round(Math.max(0,Math.min(1,a[0]))*255),
+      G=Math.round(Math.max(0,Math.min(1,a[1]))*255),
+      B=Math.round(Math.max(0,Math.min(1,a[2]))*255);
+  return {hex:'#'+[R,G,B].map(function(v){return v.toString(16).padStart(2,'0');}).join('').toUpperCase(),R:R,G:G,B:B};
+}
+
+/* ============ JWST · chromatic ordering (HSV blu→rosso) ============ */
+function hsv2rgb(h,s,v){h=((h%360)+360)%360;var c=v*s,x=c*(1-Math.abs((h/60)%2-1)),m=v-c,r,gg,b;
+  if(h<60){r=c;gg=x;b=0;}else if(h<120){r=x;gg=c;b=0;}else if(h<180){r=0;gg=c;b=x;}
+  else if(h<240){r=0;gg=x;b=c;}else if(h<300){r=x;gg=0;b=c;}else{r=c;gg=0;b=x;}
+  return [Math.round((r+m)*255),Math.round((gg+m)*255),Math.round((b+m)*255)];}
+function rgbHex(a){return '#'+a.map(function(v){return v.toString(16).padStart(2,'0');}).join('').toUpperCase();}
+function chromatic(list){
+  var s=list.slice().sort(function(a,b){return a.wl-b.wl;}); var N=s.length;
+  return s.map(function(f,i){var hue=N===1?120:240*(1-i/(N-1));
+    return {name:f.name,wl:f.wl,hex:rgbHex(hsv2rgb(hue,0.9,1))};});
+}
+
+/* ============ HST UI ============ */
+var wl=document.getElementById('wl'),slider=document.getElementById('slider'),
+    swatch=document.getElementById('swatch'),hexEl=document.getElementById('hex'),
+    rgbEl=document.getElementById('rgb'),mark=document.getElementById('mark'),
+    band=document.getElementById('band'),copyBtn=document.getElementById('copy'),
+    hexClick=document.getElementById('hexClick');
+function bandInfo(l){
+  if(l<380)return "<b>Ultravioletto</b> — invisibile all'occhio. Colore mostrato = convenzione (violetto).";
+  if(l>750)return "<b>Infrarosso</b> — invisibile all'occhio. Per set IR usa la modalità <b>JWST</b>, non il colore assoluto.";
+  return "<b>Visibile</b> — colore percettivo reale di "+l+" nm: usalo come stop pieno del Gradient Map.";
+}
+function updateHST(v,from){var l=parseFloat(v); if(isNaN(l))return;
+  if(from!=='wl')wl.value=(Math.round(l*10)/10);
+  var o=toHex(l); swatch.style.background=o.hex; hexEl.textContent=o.hex;
+  rgbEl.textContent="rgb("+o.R+", "+o.G+", "+o.B+")"; band.innerHTML=bandInfo(l);
+  var pos=Math.max(0,Math.min(1,(l-380)/370)); mark.style.left=(pos*100)+'%';
+  if(l>=380&&l<=750)slider.value=l; copyBtn.textContent='COPIA'; copyBtn.classList.remove('done');
+}
+function doCopyHST(){copyText(hexEl.textContent).then(function(){flash(copyBtn,'COPIATO ✓');})
+  .catch(function(){var r=document.createRange();r.selectNodeContents(hexEl);
+    var s=window.getSelection();s.removeAllRanges();s.addRange(r);copyBtn.textContent='⌘/Ctrl+C';
+    setTimeout(function(){copyBtn.textContent='COPIA';},2000);});}
+wl.addEventListener('input',function(e){updateHST(e.target.value,'wl');});
+slider.addEventListener('input',function(e){updateHST(e.target.value,'slider');});
+copyBtn.addEventListener('click',function(e){e.stopPropagation();doCopyHST();});
+hexClick.addEventListener('click',doCopyHST);
+var EM=[["[OII]",372.7],["Hβ",486.1],["[OIII]",500.7],["HeII",468.6],["Hα",656.3],["[NII]",658.4],["[SII]",671.6],["[SIII]",953.1]];
+var chH=document.getElementById('chipsHST');
+EM.forEach(function(it){var c=document.createElement('div');c.className='chip';
+  c.innerHTML=it[0]+' <small>'+it[1]+'</small>';c.onclick=function(){updateHST(it[1],'chip');};chH.appendChild(c);});
+updateHST(656.3,'init');
+
+/* ============ JWST UI ============ */
+var jwName=document.getElementById('jwName'),jwWl=document.getElementById('jwWl'),
+    jwAdd=document.getElementById('jwAdd'),jwlist=document.getElementById('jwlist'),
+    jwempty=document.getElementById('jwempty'),jwbar=document.getElementById('jwbar'),
+    jwCopyAll=document.getElementById('jwCopyAll');
+var filters=[];
+function renderJW(){
+  if(filters.length===0){jwlist.innerHTML='<div class="jwempty">Aggiungi almeno 2 filtri per generare la palette.</div>';
+    jwbar.classList.add('hidden'); jwCopyAll.classList.add('hidden'); return;}
+  var colored=chromatic(filters);
+  // barra
+  jwbar.classList.remove('hidden'); jwbar.innerHTML='';
+  colored.forEach(function(f){var d=document.createElement('div');d.style.background=f.hex;jwbar.appendChild(d);});
+  // lista (in ordine di lunghezza d'onda)
+  jwlist.innerHTML='';
+  colored.forEach(function(f){
+    var row=document.createElement('div');row.className='jrow';
+    row.innerHTML='<div class="sw" style="background:'+f.hex+'"></div>'+
+      '<div class="nm">'+f.name+'</div>'+
+      '<div class="wlv">'+f.wl+' nm</div>'+
+      '<div class="hx" title="clicca per copiare">'+f.hex+'</div>'+
+      '<button class="del" title="rimuovi">✕</button>';
+    row.querySelector('.hx').onclick=function(){copyText(f.hex);this.textContent='copiato ✓';
+      var t=this,orig=f.hex;setTimeout(function(){t.textContent=orig;},1200);};
+    row.querySelector('.del').onclick=function(){
+      var idx=filters.findIndex(function(x){return x.name===f.name&&x.wl===f.wl;});
+      if(idx>-1)filters.splice(idx,1);renderJW();};
+    jwlist.appendChild(row);
+  });
+  jwCopyAll.classList.toggle('hidden',filters.length<1);
+}
+function addFilter(name,nm){
+  var l=parseFloat(nm);
+  if(!name){name='F?';}
+  if(isNaN(l)){jwWl.focus();return;}
+  filters.push({name:name.toUpperCase(),wl:l});
+  jwName.value='';jwWl.value='';jwName.focus();renderJW();
+}
+jwAdd.addEventListener('click',function(){addFilter(jwName.value.trim(),jwWl.value);});
+jwWl.addEventListener('keydown',function(e){if(e.key==='Enter')addFilter(jwName.value.trim(),jwWl.value);});
+jwName.addEventListener('keydown',function(e){if(e.key==='Enter')jwWl.focus();});
+jwCopyAll.addEventListener('click',function(){
+  var colored=chromatic(filters);
+  var txt=colored.map(function(f){return f.name+'  '+f.wl+'nm  '+f.hex;}).join('\n');
+  copyText(txt).then(function(){flash(jwCopyAll,'COPIATO ✓');})
+    .catch(function(){jwCopyAll.textContent='usa selezione manuale';});
+});
+/* set pronti JWST */
+var SETS={
+  "NIRCam · Pilastri":[["F090W",900],["F187N",1870],["F200W",2000],["F335M",3350],["F444W",4440],["F470N",4700]],
+  "NIRCam · base 4":[["F090W",900],["F200W",2000],["F335M",3350],["F444W",4440]],
+  "MIRI · 4 bande":[["F1000W",10000],["F1130W",11300],["F1280W",12800],["F1800W",18000]],
+  "Deep Field":[["F090W",900],["F150W",1500],["F200W",2000],["F277W",2770],["F356W",3560],["F444W",4440]]
+};
+var chJ=document.getElementById('chipsJWST');
+Object.keys(SETS).forEach(function(k){var c=document.createElement('div');c.className='chip';
+  c.innerHTML=k+' <small>'+SETS[k].length+'</small>';
+  c.onclick=function(){filters=SETS[k].map(function(a){return {name:a[0],wl:a[1]};});renderJW();};chJ.appendChild(c);});
+
+/* ============ Switch HST/JWST ============ */
+var hstCard=document.getElementById('hstCard'),jwstCard=document.getElementById('jwstCard'),
+    btnHST=document.getElementById('btnHST'),btnJWST=document.getElementById('btnJWST'),
+    sub=document.getElementById('sub'),foot=document.getElementById('foot');
+var FOOT_HST="Conversione CIE 1931 → sRGB (D65, γ2.4). Nel visibile (≈380–700 nm) il colore è reale; fuori è convenzione. In <code>Screen</code> il colore a schermo cambia perché la luce si somma.";
+var FOOT_JW="Chromatic ordering (metodo STScI): colori assegnati in modo relativo al set, non alla λ assoluta. Ideale per NIRCam/MIRI, dove il colore assoluto renderebbe tutto rosso. Funziona anche per mix HST+JWST.";
+function setMode(m){
+  if(m==='hst'){hstCard.classList.remove('hidden');jwstCard.classList.add('hidden');
+    btnHST.classList.add('active');btnJWST.classList.remove('active');
+    sub.innerHTML="Inserisci una lunghezza d'onda del <b>visibile</b> (anche decimale, es. 500.7) e ottieni il colore reale.";
+    foot.innerHTML=FOOT_HST;}
+  else{jwstCard.classList.remove('hidden');hstCard.classList.add('hidden');
+    btnJWST.classList.add('active');btnHST.classList.remove('active');
+    sub.innerHTML="Aggiungi i <b>filtri infrarossi</b> del tuo scatto: il tool li ordina e distribuisce i colori sull'intero spettro.";
+    foot.innerHTML=FOOT_JW; renderJW();}
+}
+btnHST.onclick=function(){setMode('hst');};
+btnJWST.onclick=function(){setMode('jwst');};
+setMode('hst');
+</script>
+</body>
+</html>
